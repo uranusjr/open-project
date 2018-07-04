@@ -13,19 +13,13 @@ import fuzzywuzzy.fuzz
 def parse_args(args):
     parser = argparse.ArgumentParser(prog='sublit')
     parser.add_argument(
-        'name', help="File or directory to open",
+        'name', nargs='?', default='.',
+        help="File or directory to open (default is the current directory)",
     )
     parser.add_argument(
         '--background', '-b', dest='in_background', action='store_true',
         help="Don't activate the application",
     )
-    if not args:    # Display help if no arguments are passed.
-        parser.print_help()
-        try:
-            EX_USAGE = os.EX_USAGE
-        except AttributeError:  # Windows.
-            EX_USAGE = 1
-        parser.exit(EX_USAGE)
     return parser.parse_args(args)
 
 
