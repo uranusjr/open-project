@@ -96,7 +96,7 @@ def find_subl_in_path():
     directories = os.environ['PATH'].split(os.pathsep)
     for directory in directories:
         path = pathlib.Path(directory, 'subl')
-        if path.if_file() and os.access(path, os.X_OK):
+        if path.is_file() and os.access(path, os.X_OK):
             return path.resolve()
     return None
 
