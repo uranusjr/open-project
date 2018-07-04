@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 import subprocess
+import sys
 
 import fuzzywuzzy.fuzz
 
@@ -23,18 +24,18 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-FUZZY_FIND_THREASHOLD = 0.75
+FUZZY_FIND_THRESHOLD = 75
 
 
 def find_project_here(path):
     for p in path.glob('*.sublime-project'):
-        if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THREASHOLD:
+        if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THRESHOLD:
             return p
 
 
 def find_project_in_parent(path):
     for p in path.parent.glob('*.sublime-project'):
-        if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THREASHOLD:
+        if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THRESHOLD:
             return p
 
 
@@ -74,14 +75,17 @@ def build_subl_args(options):
         name = options.name
     else:
         name = match.group(1)
-    path = pathlib.Path(name)
+    path = pathlib.Path(name).resolve()
     if path.is_dir():
         project = find_project_to_open(path)
         if project:
+            print(f'Opening {project}', file=sys.stderr)
             args.extend(('--project', str(project)))
         else:
+            print(f'Opening {path}', file=sys.stderr)
             args.extend(('--new-window', str(path)))
     else:
+        print(f'Opening {options.name}', file=sys.stderr)
         args.extend(('--new-window', options.name))
     return args
 
@@ -119,5 +123,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    import sys
     main(sys.argv)
