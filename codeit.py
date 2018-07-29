@@ -97,17 +97,20 @@ def find_code_in_registry():
     for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
         for iid in CODE_INSTALLER_IDS:
             path = '\\'.join([
-                'Software', 'Microsoft', 'Windows', 'CurrentVersion'
+                'Software', 'Microsoft', 'Windows', 'CurrentVersion',
                 'Uninstall', '{{{}}}_is1'.format(iid),
             ])
-            key = winreg.OpenKey(hkey, path)
+            try:
+                key = winreg.OpenKey(hkey, path)
+            except FileNotFoundError:
+                continue
             try:
                 value, t = winreg.QueryValueEx(key, 'InstallLocation')
             except FileNotFoundError:
                 pass
             else:
                 if t == 1:
-                    executable = find_code_cmd(pathlib.Path(value))
+                    executable = find_code_cmd(pathlib.Path(value, 'bin'))
                     if executable:
                         code = executable
             winreg.CloseKey(key)
