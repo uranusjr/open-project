@@ -1,4 +1,6 @@
 """Smart-open a thing in Sublime Text.
+
+This only works on macOS because I use Sublime Text on macOS.
 """
 
 import argparse
@@ -117,10 +119,10 @@ def find_subl():
     return subl
 
 
-def main(argv):
-    options = parse_args(argv[1:])
+def main(args=None):
+    options = parse_args(args)
     os.execl(str(find_subl()), 'subl', *build_subl_args(options))
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
