@@ -13,4 +13,5 @@ python-levenshtein = '*'
 python_version = '3.7'
 
 [scripts]
+codeit = 'python codeit.py'
 sublit = 'python sublit.py'
