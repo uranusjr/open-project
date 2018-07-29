@@ -1,8 +1,9 @@
-====================================================
-Simple script to wrap ``subl`` for project discovery
-====================================================
+==========================================================
+Wrap ``subl`` and ``code`` for project/workspace discovery
+==========================================================
 
-I grew tired typing ``subl --project path_to_project``.
+I grew tired typing ``subl --project path_to_project`` and
+``code path_to_my.code-workspace``.
 
 This automatically parse the passed argument (only one), aod do the following:
 
@@ -12,4 +13,5 @@ This automatically parse the passed argument (only one), aod do the following:
     * If a project is not found, open the directory.
 * Otherwise, open it as a file.
 
-``subl`` is found automatically via ``mdfind`` if it is not in PATH.
+``subl`` is found via ``mdfind``, and ``code`` via registry if they are not in
+PATH.
