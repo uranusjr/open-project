@@ -10,7 +10,11 @@ import os
 import pathlib
 import subprocess
 import sys
-import winreg
+
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
 import fuzzywuzzy.fuzz
 
@@ -70,7 +74,8 @@ def build_code_args(options):
 
 
 def find_code_cmd(directory):
-    path = pathlib.Path(directory, 'code.cmd')
+    name = 'code.cmd' if sys.platform == 'win32' else 'code'
+    path = pathlib.Path(directory, name)
     if path.is_file() and os.access(path, os.X_OK):
         return path.resolve()
     return None
@@ -112,6 +117,8 @@ def read_vscode_location(key):
 
 
 def find_code_in_registry():
+    if winreg is None:
+        return None
     for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
         path = '\\'.join([
             'Software', 'Microsoft', 'Windows', 'CurrentVersion', 'Uninstall',
@@ -141,12 +148,7 @@ def find_code():
 
 def main(args=None):
     options = parse_args(args)
-    sys.exit(subprocess.call([
-        os.environ['COMSPEC'],
-        '/c',
-        str(find_code()),
-        *build_code_args(options),
-    ]))
+    sys.exit(subprocess.call([str(find_code()), *build_code_args(options)]))
 
 
 if __name__ == '__main__':
