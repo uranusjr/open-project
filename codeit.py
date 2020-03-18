@@ -4,6 +4,8 @@ This only works on Windows because I use Visual Studio Code on Windows.
 """
 
 import argparse
+import contextlib
+import itertools
 import os
 import pathlib
 import subprocess
@@ -83,40 +85,51 @@ def find_code_in_path():
     return None
 
 
-# From https://github.com/Microsoft/vscode/issues/37807#issuecomment-343493092.
-CODE_INSTALLER_IDS = [
-    '1287CAD5-7C8D-410D-88B9-0D1EE4A83FF2',     # 64bit insider.
-    'EA457B21-F73E-494C-ACAB-524FDE069978',     # 64bit stable.
-    'C26E74D1-022E-4238-8B9D-1E7564A36CC9',     # 32bit insider.
-    'F8A2A208-72B3-4D61-95FC-8A65D340689B',     # 32bit stable.
-]
+@contextlib.contextmanager
+def open_key(*args):
+    key = winreg.OpenKey(*args)
+    yield key
+    winreg.CloseKey(key)
+
+
+def read_string(key, name):
+    try:
+        v, t = winreg.QueryValueEx(key, name)
+    except FileNotFoundError:
+        return None
+    if t == 1:
+        return v
+    return None
+
+
+def read_vscode_location(key):
+    if read_string(key, 'Publisher') != 'Microsoft Corporation':
+        return None
+    display = read_string(key, 'DisplayName')
+    if not display or not display.startswith('Microsoft Visual Studio Code'):
+        return None
+    return read_string(key, 'InstallLocation')
 
 
 def find_code_in_registry():
-    code = None
     for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
-        for iid in CODE_INSTALLER_IDS:
-            path = '\\'.join([
-                'Software', 'Microsoft', 'Windows', 'CurrentVersion',
-                'Uninstall', '{{{}}}_is1'.format(iid),
-            ])
-            try:
-                key = winreg.OpenKey(hkey, path)
-            except FileNotFoundError:
-                continue
-            try:
-                value, t = winreg.QueryValueEx(key, 'InstallLocation')
-            except FileNotFoundError:
-                pass
-            else:
-                if t == 1:
-                    executable = find_code_cmd(pathlib.Path(value, 'bin'))
+        path = '\\'.join([
+            'Software', 'Microsoft', 'Windows', 'CurrentVersion', 'Uninstall',
+        ])
+        with open_key(hkey, path) as pkey:
+            for i in itertools.count():
+                try:
+                    name = winreg.EnumKey(pkey, i)
+                except OSError:
+                    break
+                with open_key(pkey, name) as key:
+                    location = read_vscode_location(key)
+                    if not location:
+                        continue
+                    executable = find_code_cmd(pathlib.Path(location, 'bin'))
                     if executable:
-                        code = executable
-            winreg.CloseKey(key)
-            if code:
-                return code
-    return code
+                        return executable
+    return None
 
 
 def find_code():
