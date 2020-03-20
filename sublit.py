@@ -14,13 +14,18 @@ import fuzzywuzzy.fuzz
 
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(prog='sublit')
+    parser = argparse.ArgumentParser(prog="sublit")
     parser.add_argument(
-        'name', nargs='?', default='.',
+        "name",
+        nargs="?",
+        default=".",
         help="File or directory to open (default is the current directory)",
     )
     parser.add_argument(
-        '--background', '-b', dest='in_background', action='store_true',
+        "--background",
+        "-b",
+        dest="in_background",
+        action="store_true",
         help="Don't activate the application",
     )
     return parser.parse_args(args)
@@ -30,13 +35,13 @@ FUZZY_FIND_THRESHOLD = 75
 
 
 def find_project_here(path):
-    for p in path.glob('*.sublime-project'):
+    for p in path.glob("*.sublime-project"):
         if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THRESHOLD:
             return p
 
 
 def find_project_in_parent(path):
-    for p in path.parent.glob('*.sublime-project'):
+    for p in path.parent.glob("*.sublime-project"):
         if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THRESHOLD:
             return p
 
@@ -55,7 +60,7 @@ def find_project_to_open(path):
 
 
 OPEN_NAME_PATTNER = re.compile(
-    r'''
+    r"""
     ^
     ([^:]+)         # File/directory name.
     (?:
@@ -63,7 +68,7 @@ OPEN_NAME_PATTNER = re.compile(
         (?::\d+)?   # Column number.
     )?
     $
-    ''',
+    """,
     re.VERBOSE,
 )
 
@@ -71,7 +76,7 @@ OPEN_NAME_PATTNER = re.compile(
 def build_subl_args(options):
     args = []
     if options.in_background:
-        args.append('--background')
+        args.append("--background")
     match = OPEN_NAME_PATTNER.match(options.name)
     if not match:
         name = options.name
@@ -81,21 +86,21 @@ def build_subl_args(options):
     if path.is_dir():
         project = find_project_to_open(path)
         if project:
-            print(f'Opening {project}', file=sys.stderr)
-            args.extend(('--project', str(project)))
+            print(f"Opening {project}", file=sys.stderr)
+            args.extend(("--project", str(project)))
         else:
-            print(f'Opening {path}', file=sys.stderr)
-            args.extend(('--new-window', str(path)))
+            print(f"Opening {path}", file=sys.stderr)
+            args.extend(("--new-window", str(path)))
     else:
-        print(f'Opening {options.name}', file=sys.stderr)
-        args.extend(('--new-window', options.name))
+        print(f"Opening {options.name}", file=sys.stderr)
+        args.extend(("--new-window", options.name))
     return args
 
 
 def find_subl_in_path():
-    directories = os.environ['PATH'].split(os.pathsep)
+    directories = os.environ["PATH"].split(os.pathsep)
     for directory in directories:
-        path = pathlib.Path(directory, 'subl')
+        path = pathlib.Path(directory, "subl")
         if path.is_file() and os.access(path, os.X_OK):
             return path.resolve()
     return None
@@ -103,26 +108,26 @@ def find_subl_in_path():
 
 def find_subl_with_mdfind():
     app = subprocess.check_output(
-        ['/usr/bin/mdfind', 'kMDItemCFBundleIdentifier=com.sublimetext.3'],
-        encoding='utf-8',
+        ["/usr/bin/mdfind", "kMDItemCFBundleIdentifier=com.sublimetext.3"],
+        encoding="utf-8",
     ).strip()
     if not app:
         return None
-    path = pathlib.Path(app, 'Contents', 'SharedSupport', 'bin', 'subl')
+    path = pathlib.Path(app, "Contents", "SharedSupport", "bin", "subl")
     return path.resolve()
 
 
 def find_subl():
     subl = find_subl_in_path() or find_subl_with_mdfind()
     if not subl:
-        raise ValueError('subl for Sublime Text 3 not found on this system')
+        raise ValueError("subl for Sublime Text 3 not found on this system")
     return subl
 
 
 def main(args=None):
     options = parse_args(args)
-    os.execl(str(find_subl()), 'subl', *build_subl_args(options))
+    os.execl(str(find_subl()), "subl", *build_subl_args(options))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
