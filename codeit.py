@@ -20,9 +20,11 @@ import fuzzywuzzy.fuzz
 
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(prog='codeit')
+    parser = argparse.ArgumentParser(prog="codeit")
     parser.add_argument(
-        'name', nargs='?', default='.',
+        "name",
+        nargs="?",
+        default=".",
         help="File or directory to open (default is the current directory)",
     )
     return parser.parse_args(args)
@@ -32,13 +34,13 @@ FUZZY_FIND_THRESHOLD = 75
 
 
 def find_workspace_here(path):
-    for p in path.glob('*.code-workspace'):
+    for p in path.glob("*.code-workspace"):
         if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THRESHOLD:
             return p
 
 
 def find_workspace_in_parent(path):
-    for p in path.parent.glob('*.code-workspace'):
+    for p in path.parent.glob("*.code-workspace"):
         if fuzzywuzzy.fuzz.ratio(path.name, p.stem) > FUZZY_FIND_THRESHOLD:
             return p
 
@@ -62,22 +64,22 @@ def build_code_args(options):
     if path.is_dir():
         workspace = find_workspace_to_open(path)
         if workspace:
-            print(f'Opening {workspace}', file=sys.stderr)
-            args.extend(('--new-window', str(workspace)))
+            print(f"Opening {workspace}", file=sys.stderr)
+            args.extend(("--new-window", os.fspath(workspace)))
         else:
-            print(f'Opening {path}', file=sys.stderr)
-            args.extend(('--new-window', str(path)))
+            print(f"Opening {path}", file=sys.stderr)
+            args.extend(("--new-window", os.fspath(path)))
     else:
-        print(f'Opening {options.name}', file=sys.stderr)
-        args.extend(('--new-window', options.name))
+        print(f"Opening {options.name}", file=sys.stderr)
+        args.extend(("--new-window", options.name))
     return args
 
 
 def find_code_cmd(directory):
-    pathext = os.environ.get('PATHEXT') or ''
-    exts = ['', *pathext.split(os.pathsep)]
+    pathext = os.environ.get("PATHEXT") or ""
+    exts = ["", *pathext.split(os.pathsep)]
     for ext in exts:
-        name = 'code{}'.format(ext)
+        name = f"code{ext}"
         path = pathlib.Path(directory, name)
         if path.is_file() and os.access(path, os.X_OK):
             return path
@@ -85,7 +87,7 @@ def find_code_cmd(directory):
 
 
 def find_in_path():
-    directories = os.environ['PATH'].split(os.pathsep)
+    directories = os.environ["PATH"].split(os.pathsep)
     for directory in directories:
         cmd = find_code_cmd(directory)
         if cmd:
@@ -111,21 +113,27 @@ def read_string(key, name):
 
 
 def read_vscode_location(key):
-    if read_string(key, 'Publisher') != 'Microsoft Corporation':
+    if read_string(key, "Publisher") != "Microsoft Corporation":
         return None
-    display = read_string(key, 'DisplayName')
-    if not display or not display.startswith('Microsoft Visual Studio Code'):
+    display = read_string(key, "DisplayName")
+    if not display or not display.startswith("Microsoft Visual Studio Code"):
         return None
-    return read_string(key, 'InstallLocation')
+    return read_string(key, "InstallLocation")
 
 
 def find_in_registry():
     if winreg is None:
         return None
     for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
-        path = '\\'.join([
-            'Software', 'Microsoft', 'Windows', 'CurrentVersion', 'Uninstall',
-        ])
+        path = "\\".join(
+            [
+                "Software",
+                "Microsoft",
+                "Windows",
+                "CurrentVersion",
+                "Uninstall",
+            ]
+        )
         with open_key(hkey, path) as pkey:
             for i in itertools.count():
                 try:
@@ -136,23 +144,24 @@ def find_in_registry():
                     location = read_vscode_location(key)
                     if not location:
                         continue
-                    cmd = find_code_cmd(pathlib.Path(location, 'bin'))
+                    cmd = find_code_cmd(pathlib.Path(location, "bin"))
                     if cmd:
                         return cmd
     return None
 
 
 def find_with_mdfind():
-    mdfind = pathlib.Path('/usr/bin/mdfind')
+    mdfind = pathlib.Path("/usr/bin/mdfind")
     if not mdfind.is_file():
         return None
     app = subprocess.check_output(
-        [str(mdfind), 'kMDItemCFBundleIdentifier=com.microsoft.VSCode'],
-        encoding='utf-8',
+        os.fspath
+        [os.fspath(mdfind), "kMDItemCFBundleIdentifier=com.microsoft.VSCode"],
+        encoding="utf-8",
     ).strip()
     if not app:
         return None
-    cmd = find_code_cmd(app.joinpath('Contents', 'Resources', 'app', 'bin'))
+    cmd = find_code_cmd(app.joinpath("Contents", "Resources", "app", "bin"))
     if cmd.is_file():
         return cmd
     return None
@@ -161,14 +170,14 @@ def find_with_mdfind():
 def find_code():
     cmd = find_in_path() or find_in_registry() or find_with_mdfind()
     if not cmd:
-        raise ValueError('code for VS Code not found on this system')
+        raise ValueError("code for VS Code not found on this system")
     return cmd
 
 
 def main(args=None):
     options = parse_args(args)
-    sys.exit(subprocess.call([str(find_code()), *build_code_args(options)]))
+    return subprocess.call([os.fspath(find_code()), *build_code_args(options)])
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    sys.exit(main())
