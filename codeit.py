@@ -81,7 +81,7 @@ def find_code_cmd(directory):
     return None
 
 
-def find_code_in_path():
+def find_in_path():
     directories = os.environ['PATH'].split(os.pathsep)
     for directory in directories:
         executable = find_code_cmd(directory)
@@ -116,7 +116,7 @@ def read_vscode_location(key):
     return read_string(key, 'InstallLocation')
 
 
-def find_code_in_registry():
+def find_in_registry():
     if winreg is None:
         return None
     for hkey in [winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE]:
@@ -139,8 +139,24 @@ def find_code_in_registry():
     return None
 
 
+def find_with_mdfind():
+    mdfind = pathlib.Path('/usr/bin/mdfind')
+    if not mdfind.is_file():
+        return None
+    app = subprocess.check_output(
+        [str(mdfind), 'kMDItemCFBundleIdentifier=com.microsoft.VSCode'],
+        encoding='utf-8',
+    ).strip()
+    if not app:
+        return None
+    code = app.joinpath('Contents', 'Resources', 'app', 'bin', 'code')
+    if code.is_file():
+        return code
+    return None
+
+
 def find_code():
-    code = find_code_in_path() or find_code_in_registry()
+    code = find_in_path() or find_in_registry() or find_with_mdfind()
     if not code:
         raise ValueError('code for VS Code not found on this system')
     return code
