@@ -74,19 +74,22 @@ def build_code_args(options):
 
 
 def find_code_cmd(directory):
-    name = 'code.cmd' if sys.platform == 'win32' else 'code'
-    path = pathlib.Path(directory, name)
-    if path.is_file() and os.access(path, os.X_OK):
-        return path.resolve()
-    return None
+    pathext = os.environ.get('PATHEXT') or ''
+    exts = ['', *pathext.split(os.pathsep)]
+    for ext in exts:
+        name = 'code{}'.format(ext)
+        path = pathlib.Path(directory, name)
+        if path.is_file() and os.access(path, os.X_OK):
+            return path
+        return None
 
 
 def find_in_path():
     directories = os.environ['PATH'].split(os.pathsep)
     for directory in directories:
-        executable = find_code_cmd(directory)
-        if executable:
-            return executable
+        cmd = find_code_cmd(directory)
+        if cmd:
+            return cmd
     return None
 
 
@@ -133,9 +136,9 @@ def find_in_registry():
                     location = read_vscode_location(key)
                     if not location:
                         continue
-                    executable = find_code_cmd(pathlib.Path(location, 'bin'))
-                    if executable:
-                        return executable
+                    cmd = find_code_cmd(pathlib.Path(location, 'bin'))
+                    if cmd:
+                        return cmd
     return None
 
 
@@ -149,17 +152,17 @@ def find_with_mdfind():
     ).strip()
     if not app:
         return None
-    code = app.joinpath('Contents', 'Resources', 'app', 'bin', 'code')
-    if code.is_file():
-        return code
+    cmd = find_code_cmd(app.joinpath('Contents', 'Resources', 'app', 'bin'))
+    if cmd.is_file():
+        return cmd
     return None
 
 
 def find_code():
-    code = find_in_path() or find_in_registry() or find_with_mdfind()
-    if not code:
+    cmd = find_in_path() or find_in_registry() or find_with_mdfind()
+    if not cmd:
         raise ValueError('code for VS Code not found on this system')
-    return code
+    return cmd
 
 
 def main(args=None):
