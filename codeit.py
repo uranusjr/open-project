@@ -76,14 +76,11 @@ def build_code_args(options):
 
 
 def find_code_cmd(directory):
-    pathext = os.environ.get("PATHEXT") or ""
-    exts = ["", *pathext.split(os.pathsep)]
-    for ext in exts:
-        name = f"code{ext}"
-        path = pathlib.Path(directory, name)
-        if path.is_file() and os.access(path, os.X_OK):
-            return path
-        return None
+    name = "code.cmd" if sys.platform == "win32" else "code"
+    path = pathlib.Path(directory, name)
+    if path.is_file() and os.access(path, os.X_OK):
+        return path
+    return None
 
 
 def find_in_path():
