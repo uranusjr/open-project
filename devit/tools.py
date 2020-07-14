@@ -1,5 +1,6 @@
 import os
 import pathlib
+import subprocess
 import sys
 
 import fuzzywuzzy.fuzz
@@ -56,14 +57,22 @@ class VisualStudioCode(_Tool):
     def __str__(self):
         return "Visual Studio Code"
 
-    def get_bin_in_app(self, app):
+    def get_bin_mac(self, app):
         return app.joinpath("Contents", "Resources", "app", "bin")
+
+    def get_bin_win(self, root):
+        return root.joinpath("bin")
 
     def iter_args(self, path, background):
         if background:
             raise _DoesNotSupportBackground()
         yield "--new-window"
         yield os.fspath(path)
+
+    def run(self, command):
+        # code and code.cmd on WIndows are not actual executables, but a batch
+        # script. We need the shell to run it.
+        return subprocess.call(command, shell=(sys.platform == "win32"))
 
 
 class SublimeText3(_Tool):
@@ -77,8 +86,11 @@ class SublimeText3(_Tool):
     def __str__(self):
         return "Sublime Text 3"
 
-    def get_bin_in_app(self, app):
+    def get_bin_mac(self, app):
         return app.joinpath("Contents", "SharedSupport", "bin")
+
+    def get_bin_win(self, root):
+        return root  # TODO: Inspect Sublime Text to find where subl.exe is.
 
     def iter_args(self, path, background):
         if background:
@@ -88,3 +100,6 @@ class SublimeText3(_Tool):
         else:
             yield "--new-window"
         yield os.fspath(path)
+
+    def run(self, command):
+        return subprocess.call(command)

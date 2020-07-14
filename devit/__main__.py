@@ -6,4 +6,5 @@ if not __package__:
 
 if __name__ == "__main__":
     from devit import main
+
     sys.exit(main())

@@ -27,7 +27,7 @@ def _read_location(tool, key):
     if _read_string(key, "Publisher") != tool.publisher:
         return None
     display = _read_string(key, "DisplayName")
-    if not display or display.startswith(tool.display_prefix):
+    if not display or not display.startswith(tool.display_prefix):
         return None
     return _read_string(key, "InstallLocation")
 
@@ -52,10 +52,10 @@ def _find_in_registry(tool):
                 except OSError:
                     break
                 with _open_key(pkey, name) as key:
-                    location = _read_location(tool, key)
-                    if not location:
+                    root = _read_location(tool, key)
+                    if not root:
                         continue
-                    cmd = tool.find_cmd(pathlib.Path(location))
+                    cmd = tool.find_cmd(tool.get_bin_win(pathlib.Path(root)))
                     if cmd:
                         return cmd
     return None

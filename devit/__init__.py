@@ -81,4 +81,4 @@ def main(argv=None):
         return -1
 
     print(f"Opening {path} with {tool}", file=sys.stdout)
-    return subprocess.call(command)
+    return tool.run(command)

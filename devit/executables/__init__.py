@@ -14,9 +14,11 @@ def _find_in_path(tool):
 def _find_on_platform(tool):
     if sys.platform == "win32":
         from . import win32
+
         return win32.find(tool)
     elif sys.platform == "darwin":
         from . import darwin
+
         return darwin.find(tool)
     return None
 

@@ -13,7 +13,7 @@ def _find_with_mdfind(tool):
     ).strip()
     if not app:
         return None
-    cmd = tool.find_cmd(tool.get_bin_in_app(pathlib.Path(app)))
+    cmd = tool.find_cmd(tool.get_bin_mac(pathlib.Path(app)))
     if cmd.is_file():
         return cmd
     return None
