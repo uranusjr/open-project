@@ -69,7 +69,7 @@ def main(argv=None):
         tool = tool or _ToolChoice[_DEFAULT_TOOL].value
     else:
         tool = options.tool
-        path = tool.find_project(options.name)
+        path = tool.find_project(options.name) or options.name
 
     try:
         command = [
