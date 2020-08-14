@@ -36,10 +36,13 @@ class _Tool:
                 return p
 
     def find_project(self, path):
+        if not path.is_dir():
+            return None
         for find in [self._find_project_here, self._find_project_in_parent]:
             found = find(path)
             if found:
                 return found
+        return None
 
 
 class _DoesNotSupportBackground(ValueError):
