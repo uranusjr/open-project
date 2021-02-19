@@ -2,7 +2,6 @@ import argparse
 import enum
 import os
 import pathlib
-import subprocess
 import sys
 
 from . import executables, tools

@@ -73,7 +73,7 @@ class VisualStudioCode(_Tool):
         yield os.fspath(path)
 
     def run(self, command):
-        # code and code.cmd on WIndows are not actual executables, but a batch
+        # code and code.cmd on Windows are not actual executables, but a batch
         # script. We need the shell to run it.
         return subprocess.call(command, shell=(sys.platform == "win32"))
 
